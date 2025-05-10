@@ -1,4 +1,3 @@
-// src/Dashboard.jsx
 import { useState, useEffect } from "react";
 import { auth } from "./firebase";
 import { useNavigate } from "react-router-dom";
@@ -10,8 +9,10 @@ const Dashboard = () => {
   const [filter, setFilter] = useState("");
   const [message, setMessage] = useState("");
 
+  // Load mock and stored students
   const loadStudents = () => {
     const mockStudents = getStudents();
+
     const storedStudents = JSON.parse(localStorage.getItem("students") || "[]");
 
     const storedWithIds = storedStudents.map((s, index) => ({
@@ -19,8 +20,18 @@ const Dashboard = () => {
       ...s,
     }));
 
-    const combined = [...mockStudents, ...storedWithIds];
-    setStudents(combined);
+    // Prevent duplicates: compare by name/email
+    const uniqueStudents = [
+      ...mockStudents,
+      ...storedWithIds.filter(
+        (s) =>
+          !mockStudents.some(
+            (m) => m.email === s.email && m.name === s.name
+          )
+      ),
+    ];
+
+    setStudents(uniqueStudents);
   };
 
   useEffect(() => {
@@ -47,7 +58,8 @@ const Dashboard = () => {
 
   const handleClearStudents = () => {
     localStorage.removeItem("students");
-    loadStudents(); // Reload mock data only
+    const mockStudents = getStudents();
+    setStudents(mockStudents); // only mock data remains
   };
 
   const filteredStudents = students.filter((student) =>
@@ -83,7 +95,10 @@ const Dashboard = () => {
         ) : (
           <ul className="space-y-4">
             {filteredStudents.map((student) => (
-              <li key={student.id} className="p-4 border border-gray-200 rounded-md shadow-sm">
+              <li
+                key={student.id}
+                className="p-4 border border-gray-200 rounded-md shadow-sm"
+              >
                 <h4 className="font-bold text-lg">{student.name}</h4>
                 <p>{student.email}</p>
                 <p className="italic text-gray-600">{student.course}</p>
